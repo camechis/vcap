@@ -96,6 +96,7 @@ fi
 
 #echo "Activate rvm"
 #rvm_path="$HOME/.rvm"
+echo "Activate rvm"
 echo "Fixing init scripts to work with rvm"
 
 #if current user is root rvm will be installed into /usr/local/rvm otherwise its installed to users home directory
