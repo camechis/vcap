@@ -4,10 +4,16 @@
 VCAP_REPO=${VCAP_REPO:-https://github.com/cloudfoundry/vcap.git}
 
 export rvm_trust_rvmrcs_flag=1 # Trust all rmvrcs we find
-
 OS=`uname -s`
 if [[ $OS == 'Linux' ]]; then
     PLATFORM='Linux'
+    if [ -f /etc/redhat-release ]; then
+	echo "using Fedora"
+	LINUX_VARIANT='FEDORA'
+    else
+	echo "using ubuntu"
+	LINUX_VARIANT='UBUNTU'
+    fi
 elif [[ $OS == 'Darwin' ]]; then
     PLATFORM='MacOSX'
 else
@@ -15,6 +21,8 @@ else
     exit 1
 fi
 
+CURRENT_USER=`who am i | awk '{print $1}'`
+echo "CURRENT USER IS $CURRENT_USER"
 echo ""
 echo '-----------------------------------------------------------'
 echo "($PLATFORM) One Click Installer for VMware's Cloud Application Platform!"
@@ -28,8 +36,12 @@ read -p "Enter the password you want to use for root mysql user: " MYSQL_PASS
 
 echo "Installing dependencies"
 if [[ $PLATFORM == 'Linux' ]]; then
-  sudo apt-get update
-  sudo apt-get -y install coreutils autoconf curl git-core ruby bison build-essential zlib1g-dev libssl-dev libreadline5-dev
+  if [[ $LINUX_VARIANT == 'FEDORA' ]]; then
+	sudo yum install -y coreutils autoconf curl git compat-readline5 compat-readline5-devel ruby bison openssl-devel zlib zlib-devel
+  elif [[ $LINUX_VARIANT == 'UBUNTU' ]]; then
+  	sudo apt-get update
+  	sudo apt-get -y install coreutils autoconf curl git-core ruby bison build-essential zlib1g-dev libssl-dev libreadline5-dev
+  fi
 else
   echo "Sorry, we can't install dependencies for your system yet."
 fi
@@ -69,7 +81,15 @@ fi
 
 echo "Fixing init scripts to work with rvm"
 
-rvm_path="$HOME/.rvm"
+#if current user is root rvm will be installed into /usr/local/rvm otherwise its installed to users home directory
+if [ $CURRENT_USER == 'root' ]; then
+   rvm_path="/usr/local/rvm"
+else
+   rvm_path="$HOME/.rvm"
+fi
+
+echo "RVM PATH IS $rvm_path"
+
 [[ -s "$rvm_path/scripts/rvm" ]] && source "$rvm_path/scripts/rvm"
 
 echo "Installing various rubies"
