@@ -40,6 +40,13 @@ done
 OS=`uname -s`
 if [[ $OS == 'Linux' ]]; then
     PLATFORM='Linux'
+    if [ -f /etc/redhat-release ]; then
+	echo "using Fedora"
+	LINUX_VARIANT='FEDORA'
+    else
+	echo "using ubuntu"
+	LINUX_VARIANT='UBUNTU'
+    fi
 elif [[ $OS == 'Darwin' ]]; then
     PLATFORM='MacOSX'
 else
@@ -75,13 +82,23 @@ fi
 
 echo "Installing default packages"
 if [[ $PLATFORM == 'Linux' ]]; then
-    apt-get install -qqy wget curl libcurl3 libcurl3-dev bison build-essential zlib1g-dev libssl-dev libreadline5-dev libxml2 libxml2-dev libxslt1.1 libxslt1-dev git-core sqlite3 libsqlite3-ruby libsqlite3-dev unzip zip
+    if [[ $LINUX_VARIANT == 'FEDORA' ]]; then
+    	yum install -y wget curl git libcurl libcurl-devel compat-readline5 compat-readline5-devel bison openssl-devel zlib zlib-devel libxml2-devel libxslt libxslt-devel sqlite libsq3-devel sqlite-devel ruby-sqlite3 rubygem-sqlite3-ruby zip unzip
+    else
+    	apt-get install -qqy wget curl libcurl3 libcurl3-dev bison build-essential zlib1g-dev libssl-dev libreadline5-dev libxml2 libxml2-dev libxslt1.1 libxslt1-dev git-core sqlite3 libsqlite3-ruby libsqlite3-dev unzip zip
+    fi
 fi
 
 if [[ $PLATFORM == 'Linux' ]]; then
+      
     # Probably should make this something different instead of apt_get
     echo "Installing Ruby"
-    apt-get install -qqy ruby-full rake
+    
+    if [[ $LINUX_VARIANT == 'FEDORA' ]]; then
+    	yum install -y ruby rubygem-rake
+    else
+        apt-get install -qqy ruby-full rake
+    fi
 fi
 
 # This is site/setup specific, can be commented out if not needed.
@@ -138,7 +155,11 @@ if [[ $ROUTER == true || $ALL == true ]]; then
 
     echo "Installing Nginx."
     if [[ $PLATFORM == 'Linux' ]]; then
-	apt-get install -qqy nginx
+	if [[ $LINUX_VARIANT == 'FEDORA' ]]; then        
+	    yum install -y nginx
+        else
+	    apt-get install -qqy nginx
+        fi
     elif [[ $PLATFORM == 'MacOSX' ]]; then
 	echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
     fi
