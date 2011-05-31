@@ -185,7 +185,15 @@ if [[ $CC == true || $ALL == true ]]; then
 
 	if [[ $RELATIONAL_DBS == true || $ALL == true ]]; then
 	    echo "Installing PostgreSQL server and support"
-	    apt-get install -qqy postgresql libpq-dev
+#	    apt-get install -qqy postgresql libpq-dev
+#	    if [[ -n "$POSTGRESQL_PASS" ]]; then
+#		su - postgres -c "/usr/bin/psql -c \"alter role postgres password '$POSTGRESQL_PASS'\""
+#	    fi
+	    if [[ $LINUX_VARIANT == 'FEDORA' ]]; then
+		yum install -y postgresql postgresql-devel
+	    else 
+	    	apt-get install -qqy postgresql libpq-dev
+            fi
 	    if [[ -n "$POSTGRESQL_PASS" ]]; then
 		su - postgres -c "/usr/bin/psql -c \"alter role postgres password '$POSTGRESQL_PASS'\""
 	    fi
@@ -197,8 +205,12 @@ if [[ $CC == true || $ALL == true ]]; then
           echo mysql-server-5.1 mysql-server/root_password select $MYSQL_PASS | sudo debconf-set-selections
           echo mysql-server-5.1 mysql-server/root_password_again select $MYSQL_PASS | sudo debconf-set-selections
         fi
-	    apt-get install -qqy mysql-server ruby-dev libmysql-ruby libmysqlclient-dev
-	    echo "Installing mysql gems"
+	    if [[ $LINUX_VARIANT == 'FEDORA' ]]; then
+                yum install -y mysql-server ruby-mysql mysql ruby-devel
+            else
+	        apt-get install -qqy mysql-server ruby-dev libmysql-ruby libmysqlclient-dev
+	    fi
+            echo "Installing mysql gems"
 	    gem install mysql --no-rdoc --no-ri
 	    echo ""
 	fi
@@ -224,14 +236,22 @@ if [[ $DEA == true || $ALL == true ]]; then
 
     # lsof support for secure dea monitoring, psmisc is for JeOS, which has killall5, not killall
     if [[ $PLATFORM == 'Linux' ]]; then
-	apt-get install -qqy lsof psmisc
+        if [[ $LINUX_VARIANT == 'FEDORA' ]]; then
+ 	    yum install -y lsof psmisc
+	else
+	   apt-get install -qqy lsof psmisc
+        fi
     elif [[ $PLATFORM == 'MacOSX' ]]; then
 	echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
     fi
 
     # For Ruby
     if [[ $PLATFORM == 'Linux' ]]; then
-	apt-get install -qqy librmagick-ruby
+	  if [[ $LINUX_VARIANT == 'FEDORA' ]]; then
+	     yum install -y ruby-RMagick
+          else
+	     apt-get install -qqy librmagick-ruby
+	  fi
     elif [[ $PLATFORM == 'MacOSX' ]]; then
 	echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
     fi
@@ -247,12 +267,18 @@ if [[ $DEA == true || $ALL == true ]]; then
     if [[ $JAVA == '' ]]; then
         echo "Installing Sun Java 1.6"
 	if [[ $PLATFORM == 'Linux' ]]; then
-            apt-get install -qqy python-software-properties
-            add-apt-repository "deb http://archive.canonical.com/ lucid partner"
-            apt-get -qqy update
-            echo sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true | sudo /usr/bin/debconf-set-selections
-            echo sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true | sudo /usr/bin/debconf-set-selections
-            sudo apt-get install -qqy curl sun-java6-bin sun-java6-jre sun-java6-jdk
+	    if [[ $LINUX_VARIANT == 'FEDORA' ]]; then
+                yum install -y jpackage-utils
+                #might need to be more dynamic
+	    	wget http://www.java.net/download/jdk6/6u27/promoted/b01/binaries/jdk-6u27-ea-bin-b01-linux-i586-18_may_2011-rpm.bin
+            else
+            	apt-get install -qqy python-software-properties
+            	add-apt-repository "deb http://archive.canonical.com/ lucid partner"
+            	apt-get -qqy update
+            	echo sun-java6-jdk shared/accepted-sun-dlj-v1-1 boolean true | sudo /usr/bin/debconf-set-selections
+            	echo sun-java6-jre shared/accepted-sun-dlj-v1-1 boolean true | sudo /usr/bin/debconf-set-selections
+            	sudo apt-get install -qqy curl sun-java6-bin sun-java6-jre sun-java6-jdk
+	    fi
 	elif [[ $PLATFORM == 'MacOSX' ]]; then
 	    echo -e "\033[31mFIXME: Implement for MacOSX \033[0m"
 	fi
